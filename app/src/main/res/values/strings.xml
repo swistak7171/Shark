@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Shark</string>
+
+    <!-- BookRepository -->
+    <string name="book_repository">book_repository</string>
+    <string name="page_number">page_number</string>
+    <string name="book_title">book_title</string>
+    <string name="is_started">is_started</string>
+
+    <!-- FlightRepository -->
+    <string name="flight_repository">flight_repository</string>
+    <string name="seat_number">seat_number</string>
+    <string name="flight_code">flight_code</string>
+    <string name="is_abroad">is_abroad</string>
+</resources>
