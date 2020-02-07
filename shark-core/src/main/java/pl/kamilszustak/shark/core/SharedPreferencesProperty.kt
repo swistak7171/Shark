@@ -4,21 +4,21 @@ class SharedPreferencesProperty<T: Comparable<T>>(
     private val key: String,
     private val defaultValue: T,
     private val sharedPreferencesManager: SharedPreferencesManager
-) {
+) : Property<T> {
 
-    var value: T
+    override var value: T
         get() = sharedPreferencesManager.getValue(key, defaultValue)
         set(value) {
             sharedPreferencesManager.setValue(key, value)
         }
 
-    val isPresent: Boolean = sharedPreferencesManager.isPresent(key)
+    override val isPresent: Boolean = sharedPreferencesManager.isPresent(key)
 
-    fun setValueAsync(value: T) {
+    override fun setValueAsync(value: T) {
         sharedPreferencesManager.setValue(key, value, true)
     }
 
-    fun setDefaultValue() {
+    override fun restoreDefaultValue() {
         sharedPreferencesManager.setValue(key, defaultValue)
     }
 }
