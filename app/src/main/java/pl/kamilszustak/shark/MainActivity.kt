@@ -7,8 +7,8 @@ import android.os.Bundle
 
 class MainActivity : AppCompatActivity() {
 
-    private val bookRepository = BookRepositoryImpl(application)
-    private val flightRepository = FlightRepositoryImpl(application)
+    private val bookRepository: BookRepository = BookRepositoryImpl(application)
+    private val flightRepository: FlightRepository = FlightRepositoryImpl(application)
 
     init {
         println(bookRepository.bookTitle.value)

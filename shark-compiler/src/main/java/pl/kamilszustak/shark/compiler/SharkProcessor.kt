@@ -50,8 +50,8 @@ class SharkProcessor : PrintableProcessor() {
                 return false
             }
 
-            if (!element.isInterface() && !element.isAbstractClass()) {
-                printError("@Repository annotation can be applied only to interfaces or abstract classes")
+            if (!element.isInterface()) {
+                printError("@Repository annotation can be applied only to interfaces")
                 return false
             }
 

@@ -10,3 +10,9 @@ fun Element.isInterface(): Boolean =
 fun Element.isAbstractClass(): Boolean =
     this.kind == ElementKind.CLASS &&
         Modifier.ABSTRACT in this.modifiers
+
+fun Element.isFunction(): Boolean =
+    this.kind == ElementKind.METHOD
+
+fun Element.isField(): Boolean =
+    this.kind == ElementKind.FIELD

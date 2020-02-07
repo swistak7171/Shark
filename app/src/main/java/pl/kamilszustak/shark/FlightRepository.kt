@@ -4,16 +4,17 @@ import pl.kamilszustak.shark.annotations.BooleanProperty
 import pl.kamilszustak.shark.annotations.IntProperty
 import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.annotations.StringProperty
+import pl.kamilszustak.shark.core.Property
 
 @Repository(nameResource = R.string.flight_repository, isEncrypted = true)
-abstract class FlightRepository {
+interface FlightRepository {
 
     @IntProperty(keyResource = R.string.seat_number)
-    abstract val seatNumber: Int
+    val seatNumber: Property<Int>
 
     @StringProperty(keyResource = R.string.flight_code, defaultValue = "ABC123")
-    abstract fun getFlightCode(): String
+    val flightCode: Property<String>
 
     @BooleanProperty(keyResource = R.string.is_abroad, defaultValue = true)
-    abstract val isAbroad: Boolean
+    val isAbroad: Property<Boolean>
 }
