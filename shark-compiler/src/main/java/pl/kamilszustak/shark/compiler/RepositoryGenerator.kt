@@ -38,7 +38,9 @@ object RepositoryGenerator {
     private const val SHARED_PREFERENCES_MANAGER_NAME = "sharedPreferencesManager"
 
     private const val RESTORE_DEFAULT_VALUES_FUNCTION_NAME = "restoreDefaultValues"
+    private const val RESTORE_DEFAULT_VALUES_ASYNC_FUNCTION_NAME = "restoreDefaultValuesAsync"
     private const val RESTORE_DEFAULT_VALUE_FUNCTION_NAME = "restoreDefaultValue"
+    private const val RESTORE_DEFAULT_VALUE_ASYNC_FUNCTION_NAME = "restoreDefaultValueAsync"
 
     fun generate(element: Element, processingEnvironment: ProcessingEnvironment): String {
         val repositoryAnnotation = element.getAnnotation(Repository::class.java)
@@ -83,6 +85,9 @@ object RepositoryGenerator {
         val restoreDefaultValuesFunction = FunSpec.builder(RESTORE_DEFAULT_VALUES_FUNCTION_NAME)
             .addModifiers(KModifier.OVERRIDE)
 
+        val restoreDefaultValuesAsyncFunction = FunSpec.builder(RESTORE_DEFAULT_VALUES_ASYNC_FUNCTION_NAME)
+            .addModifiers(KModifier.OVERRIDE)
+
         val elements = element.findAnnotatedElements()
         elements.forEach { annotatedElement ->
             val propertyClass = ClassName("", PROPERTY_TYPE)
@@ -109,16 +114,20 @@ object RepositoryGenerator {
                     initializerString,
                     SHARED_PREFERENCES_PROPERTY_TYPE,
                     keyResource,
-                    defaultValue,
-                    SHARED_PREFERENCES_MANAGER_NAME
+                    defaultValue
                 )
                 .build()
 
             repositoryClass.addProperty(property)
             restoreDefaultValuesFunction.addStatement("${property.name}.$RESTORE_DEFAULT_VALUE_FUNCTION_NAME()")
+            restoreDefaultValuesAsyncFunction.addStatement("${property.name}.$RESTORE_DEFAULT_VALUE_ASYNC_FUNCTION_NAME()")
         }
 
-        repositoryClass.addFunction(restoreDefaultValuesFunction.build())
+        repositoryClass.apply {
+            this.addFunction(restoreDefaultValuesFunction.build())
+            this.addFunction(restoreDefaultValuesAsyncFunction.build())
+        }
+
         file.addType(repositoryClass.build())
 
         return file.build().toString()
@@ -210,6 +219,6 @@ object RepositoryGenerator {
             else -> "%S"
         }
 
-        return "%L(getString(%L), $formatChar, %N)"
+        return "%L(getString(%L), $formatChar, this)"
     }
 }

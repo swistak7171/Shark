@@ -27,16 +27,16 @@ class SharedPreferencesManager(
         }
     }
 
-    fun <T: Comparable<T>> setValue(pair: Pair<String, T>, synchronously: Boolean = true) {
-        this.setValue(pair.first, pair.second, synchronously)
+    fun <T: Comparable<T>> setValue(pair: Pair<String, T>, asynchronously: Boolean = false) {
+        this.setValue(pair.first, pair.second, asynchronously)
     }
 
     fun <T : Comparable<T>> setValue(
         key: String,
         value: T,
-        synchronously: Boolean = false
+        asynchronously: Boolean = false
     ) {
-        sharedPreferences.edit(synchronously) {
+        sharedPreferences.edit(!asynchronously) {
             when (value) {
                 is Int -> this.putInt(key, value)
                 is Boolean -> this.putBoolean(key, value)
@@ -49,4 +49,16 @@ class SharedPreferencesManager(
 
     fun isPresent(key: String): Boolean =
         sharedPreferences.contains(key)
+
+    fun remove(key: String, asynchronously: Boolean) {
+        sharedPreferences.edit(!asynchronously) {
+            this.remove(key)
+        }
+    }
+
+    fun removeAll(asynchronously: Boolean = false) {
+        sharedPreferences.edit(!asynchronously) {
+            this.clear()
+        }
+    }
 }
