@@ -71,8 +71,10 @@ class SharkProcessor : PrintableProcessor() {
         val generatedCodeDirectory = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]
         val fileContent = RepositoryGenerator.generate(element, processingEnv)
 
-        val file = File(generatedCodeDirectory, "$className.kt")
-        file.writeText(fileContent)
+        val file = File(generatedCodeDirectory, "$className.kt").apply {
+            this.writeText(fileContent)
+            this.setReadOnly()
+        }
     }
 
     companion object {
