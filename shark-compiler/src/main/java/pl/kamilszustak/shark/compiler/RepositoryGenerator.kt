@@ -4,10 +4,13 @@ import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
+import pl.kamilszustak.shark.annotations.AnnotateClassWith
+import pl.kamilszustak.shark.annotations.AnnotateConstructorWith
 import pl.kamilszustak.shark.annotations.BooleanProperty
 import pl.kamilszustak.shark.annotations.FloatProperty
 import pl.kamilszustak.shark.annotations.IntProperty
@@ -15,11 +18,8 @@ import pl.kamilszustak.shark.annotations.LongProperty
 import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.annotations.StringProperty
 import pl.kamilszustak.shark.annotations.util.AnnotationHelper
-import java.lang.IllegalStateException
+import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import pl.kamilszustak.shark.compiler.util.isField
-import pl.kamilszustak.shark.compiler.util.isFunction
 
 object RepositoryGenerator {
 
@@ -37,7 +37,7 @@ object RepositoryGenerator {
     private const val SHARED_PREFERENCES_NAME = "sharedPreferences"
     private const val SHARED_PREFERENCES_MANAGER_NAME = "sharedPreferencesManager"
 
-    fun generate(element: Element): String {
+    fun generate(element: Element, processingEnvironment: ProcessingEnvironment): String {
         val repositoryAnnotation = element.getAnnotation(Repository::class.java)
             ?: throw IllegalStateException("Class is not annotated with @Repository annotation")
 
@@ -49,6 +49,7 @@ object RepositoryGenerator {
             .addImport(CORE_PACKAGE, SHARED_PREFERENCES_REPOSITORY_TYPE)
             .addImport(APPLICATION_PACKAGE, APPLICATION_TYPE)
 
+
         val parentClassType = TypeVariableName(SHARED_PREFERENCES_REPOSITORY_TYPE)
 
         val parentInterfaceType = TypeVariableName(element.toString())
@@ -57,18 +58,26 @@ object RepositoryGenerator {
 
         val constructor = FunSpec.constructorBuilder()
             .addParameter(APPLICATION_PARAMETER_NAME, applicationType)
-            .build()
+
+        val constructorAnnotations = getAnnotations<AnnotateConstructorWith>(element, processingEnvironment)
+        constructorAnnotations.forEach { className ->
+            constructor.addAnnotation(className)
+        }
 
         val repositoryClass = TypeSpec.classBuilder(className)
-            .primaryConstructor(constructor)
+            .primaryConstructor(constructor.build())
             .superclass(parentClassType)
             .addSuperinterface(parentInterfaceType)
             .addSuperclassConstructorParameter("%N", APPLICATION_PARAMETER_NAME)
             .addSuperclassConstructorParameter("%L", repositoryAnnotation.nameResource)
             .addSuperclassConstructorParameter("%L", repositoryAnnotation.isEncrypted)
 
-        val elements = element.findAnnotatedElements()
+        val classAnnotations = getAnnotations<AnnotateClassWith>(element, processingEnvironment)
+        classAnnotations.forEach { className ->
+            repositoryClass.addAnnotation(className)
+        }
 
+        val elements = element.findAnnotatedElements()
         elements.forEach { annotatedElement ->
             val propertyClass = ClassName("", PROPERTY_TYPE)
                 .parameterizedBy(getTypeOfProperty(annotatedElement.annotation))
@@ -90,7 +99,13 @@ object RepositoryGenerator {
                 propertyClass
             )
                 .addModifiers(KModifier.OVERRIDE)
-                .initializer(initializerString, SHARED_PREFERENCES_PROPERTY_TYPE, keyResource, defaultValue, SHARED_PREFERENCES_MANAGER_NAME)
+                .initializer(
+                    initializerString,
+                    SHARED_PREFERENCES_PROPERTY_TYPE,
+                    keyResource,
+                    defaultValue,
+                    SHARED_PREFERENCES_MANAGER_NAME
+                )
                 .build()
             repositoryClass.addProperty(property)
         }
@@ -98,6 +113,32 @@ object RepositoryGenerator {
         file.addType(repositoryClass.build())
 
         return file.build().toString()
+    }
+
+    private inline fun <reified T : Annotation> getAnnotations(element: Element, processingEnvironment: ProcessingEnvironment): List<ClassName> {
+        val annotationValue = element.annotationMirrors
+            .asSequence()
+            .filter { mirror ->
+                val annotationType = processingEnvironment.elementUtils.getTypeElement(AnnotateClassWith::class.java.canonicalName.toString()).asType()
+                processingEnvironment.typeUtils.isSameType(mirror.annotationType, annotationType)
+            }
+            .map { mirror ->
+                val entry = processingEnvironment.elementUtils.getElementValuesWithDefaults(mirror)
+                entry.values.asSequence()
+                    .filterNotNull()
+                    .toList()
+            }
+            .firstOrNull()
+            ?.firstOrNull()
+
+        val annotations = annotationValue?.value?.toString()
+            ?.split(",")
+            ?: listOf()
+
+        return annotations.map { name ->
+            val fullName = name.substringBeforeLast(".class")
+            ClassName("", fullName)
+        }
     }
 
     private fun Element.findAnnotatedElements(): List<AnnotatedElement> {
@@ -155,7 +196,7 @@ object RepositoryGenerator {
     }
 
     private fun getPropertyInitializerString(defaultValue: Any): String {
-        val formatChar =  when (defaultValue) {
+        val formatChar = when (defaultValue) {
             !is String -> "%L"
             else -> "%S"
         }

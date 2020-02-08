@@ -1,8 +1,9 @@
 package pl.kamilszustak.shark.compiler
 
 import com.google.auto.service.AutoService
+import pl.kamilszustak.shark.annotations.AnnotateClassWith
+import pl.kamilszustak.shark.annotations.AnnotateConstructorWith
 import pl.kamilszustak.shark.annotations.Repository
-import pl.kamilszustak.shark.compiler.util.isAbstractClass
 import pl.kamilszustak.shark.compiler.util.isInterface
 import java.io.File
 import javax.annotation.processing.Processor
@@ -20,7 +21,9 @@ class SharkProcessor : PrintableProcessor() {
 
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         return mutableSetOf(
-            Repository::class.java.name
+            Repository::class.java.name,
+            AnnotateClassWith::class.java.name,
+            AnnotateConstructorWith::class.java.name
         )
     }
 
@@ -66,7 +69,7 @@ class SharkProcessor : PrintableProcessor() {
         val packageName = processingEnv.elementUtils.getPackageOf(element).toString()
 
         val generatedCodeDirectory = processingEnv.options[KAPT_KOTLIN_GENERATED_OPTION_NAME]
-        val fileContent = RepositoryGenerator.generate(element)
+        val fileContent = RepositoryGenerator.generate(element, processingEnv)
 
         val file = File(generatedCodeDirectory, "$className.kt")
         file.writeText(fileContent)
