@@ -14,7 +14,7 @@ abstract class SharedPreferencesRepository(
     @StringRes
     nameResource: Int,
     isEncrypted: Boolean = false
-) {
+) : PropertyRepository {
 
     private val sharedPreferences: SharedPreferences
     protected val sharedPreferencesManager: SharedPreferencesManager
@@ -50,7 +50,7 @@ abstract class SharedPreferencesRepository(
         )
     }
 
-    protected open fun restoreDefaultValues() {
+    override fun restoreDefaultValues() {
         sharedPreferences.edit {
             this.clear()
         }

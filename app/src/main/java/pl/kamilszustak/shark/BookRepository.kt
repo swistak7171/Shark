@@ -5,9 +5,10 @@ import pl.kamilszustak.shark.annotations.IntProperty
 import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.annotations.StringProperty
 import pl.kamilszustak.shark.core.Property
+import pl.kamilszustak.shark.core.PropertyRepository
 
 @Repository(nameResource = R.string.book_repository)
-interface BookRepository {
+interface BookRepository : PropertyRepository {
 
     @IntProperty(keyResource = R.string.page_number)
     val pageNumber: Property<Int>

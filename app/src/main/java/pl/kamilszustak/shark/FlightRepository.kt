@@ -5,9 +5,10 @@ import pl.kamilszustak.shark.annotations.IntProperty
 import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.annotations.StringProperty
 import pl.kamilszustak.shark.core.Property
+import pl.kamilszustak.shark.core.PropertyRepository
 
 @Repository(nameResource = R.string.flight_repository, isEncrypted = true)
-interface FlightRepository {
+interface FlightRepository : PropertyRepository {
 
     @IntProperty(keyResource = R.string.seat_number)
     val seatNumber: Property<Int>
