@@ -6,4 +6,7 @@ interface Property<T : Comparable<T>> {
 
     fun setValueAsync(value: T)
     fun restoreDefaultValue()
+    fun restoreDefaultValueAsync()
+    fun remove()
+    fun removeAsync()
 }

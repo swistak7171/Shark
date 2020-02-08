@@ -10,7 +10,7 @@ import androidx.security.crypto.MasterKeys
 
 @Suppress("UNCHECKED_CAST")
 abstract class SharedPreferencesRepository(
-    protected val application: Application,
+    private val application: Application,
     @StringRes
     nameResource: Int,
     isEncrypted: Boolean = false
@@ -52,12 +52,67 @@ abstract class SharedPreferencesRepository(
         )
     }
 
-    override fun restoreDefaultValues() {
-        sharedPreferences.edit {
+    protected fun getString(@StringRes stringResource: Int): String =
+        application.resources.getString(stringResource)
+
+    @Suppress("UNCHECKED_CAST")
+    internal fun <T : Comparable<T>> getValue(
+        key: String,
+        defaultValue: T
+    ): T {
+        return try {
+            when (defaultValue) {
+                is Int -> sharedPreferences.getInt(key, defaultValue)
+                is Boolean -> sharedPreferences.getBoolean(key, defaultValue)
+                is String -> sharedPreferences.getString(key, defaultValue)
+                is Float -> sharedPreferences.getFloat(key, defaultValue)
+                is Long -> sharedPreferences.getLong(key, defaultValue)
+                else -> defaultValue
+            } as T
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+            defaultValue
+        }
+    }
+
+    internal fun <T: Comparable<T>> setValue(pair: Pair<String, T>, asynchronously: Boolean = false) {
+        this.setValue(pair.first, pair.second, asynchronously)
+    }
+
+    internal fun <T : Comparable<T>> setValue(
+        key: String,
+        value: T,
+        asynchronously: Boolean = false
+    ) {
+        sharedPreferences.edit(!asynchronously) {
+            when (value) {
+                is Int -> this.putInt(key, value)
+                is Boolean -> this.putBoolean(key, value)
+                is String -> this.putString(key, value)
+                is Float -> this.putFloat(key, value)
+                is Long -> this.putLong(key, value)
+            }
+        }
+    }
+
+    internal fun isPresent(key: String): Boolean =
+        sharedPreferences.contains(key)
+
+    internal fun remove(key: String, asynchronously: Boolean = false) {
+        sharedPreferences.edit(!asynchronously) {
+            this.remove(key)
+        }
+    }
+
+    override fun removeAll() {
+        sharedPreferences.edit(true) {
             this.clear()
         }
     }
 
-    protected fun getString(@StringRes stringResource: Int): String =
-        application.resources.getString(stringResource)
+    override fun removeAllAsync() {
+        sharedPreferences.edit {
+            this.clear()
+        }
+    }
 }

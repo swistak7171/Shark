@@ -3,22 +3,34 @@ package pl.kamilszustak.shark.core
 class SharedPreferencesProperty<T: Comparable<T>>(
     private val key: String,
     private val defaultValue: T,
-    private val sharedPreferencesManager: SharedPreferencesManager
+    private val sharedPreferencesRepository: SharedPreferencesRepository
 ) : Property<T> {
 
     override var value: T
-        get() = sharedPreferencesManager.getValue(key, defaultValue)
+        get() = sharedPreferencesRepository.getValue(key, defaultValue)
         set(value) {
-            sharedPreferencesManager.setValue(key, value)
+            sharedPreferencesRepository.setValue(key, value)
         }
 
-    override val isPresent: Boolean = sharedPreferencesManager.isPresent(key)
+    override val isPresent: Boolean = sharedPreferencesRepository.isPresent(key)
 
     override fun setValueAsync(value: T) {
-        sharedPreferencesManager.setValue(key, value, true)
+        sharedPreferencesRepository.setValue(key, value, true)
     }
 
     override fun restoreDefaultValue() {
-        sharedPreferencesManager.setValue(key, defaultValue)
+        sharedPreferencesRepository.setValue(key, defaultValue)
+    }
+
+    override fun restoreDefaultValueAsync() {
+        sharedPreferencesRepository.setValue(key, defaultValue, true)
+    }
+
+    override fun remove() {
+        sharedPreferencesRepository.remove(key)
+    }
+
+    override fun removeAsync() {
+        sharedPreferencesRepository.remove(key, true)
     }
 }
