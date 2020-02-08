@@ -24,6 +24,8 @@ abstract class SharedPreferencesRepository(
         sharedPreferencesManager = SharedPreferencesManager(sharedPreferences)
     }
 
+    override val all: Map<String, *> = sharedPreferences.all
+
     private fun createSharedPreferences(nameResource: Int, isEncrypted: Boolean): SharedPreferences {
         val name = getString(nameResource)
 

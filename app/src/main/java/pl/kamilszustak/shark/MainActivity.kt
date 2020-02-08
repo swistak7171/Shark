@@ -11,7 +11,6 @@ class MainActivity : AppCompatActivity() {
     private val flightRepository: FlightRepository = FlightRepositoryImpl(application)
 
     init {
-        bookRepository.restoreDefaultValues()
         println(bookRepository.bookTitle.value)
         bookRepository.bookTitle.value = "New Book"
         println(bookRepository.bookTitle.value)
