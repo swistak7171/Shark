@@ -37,6 +37,9 @@ object RepositoryGenerator {
     private const val SHARED_PREFERENCES_NAME = "sharedPreferences"
     private const val SHARED_PREFERENCES_MANAGER_NAME = "sharedPreferencesManager"
 
+    private const val RESTORE_DEFAULT_VALUES_FUNCTION_NAME = "restoreDefaultValues"
+    private const val RESTORE_DEFAULT_VALUE_FUNCTION_NAME = "restoreDefaultValue"
+
     fun generate(element: Element, processingEnvironment: ProcessingEnvironment): String {
         val repositoryAnnotation = element.getAnnotation(Repository::class.java)
             ?: throw IllegalStateException("Class is not annotated with @Repository annotation")
@@ -77,6 +80,9 @@ object RepositoryGenerator {
             repositoryClass.addAnnotation(className)
         }
 
+        val restoreDefaultValuesFunction = FunSpec.builder(RESTORE_DEFAULT_VALUES_FUNCTION_NAME)
+            .addModifiers(KModifier.OVERRIDE)
+
         val elements = element.findAnnotatedElements()
         elements.forEach { annotatedElement ->
             val propertyClass = ClassName("", PROPERTY_TYPE)
@@ -107,9 +113,12 @@ object RepositoryGenerator {
                     SHARED_PREFERENCES_MANAGER_NAME
                 )
                 .build()
+
             repositoryClass.addProperty(property)
+            restoreDefaultValuesFunction.addStatement("${property.name}.$RESTORE_DEFAULT_VALUE_FUNCTION_NAME()")
         }
 
+        repositoryClass.addFunction(restoreDefaultValuesFunction.build())
         file.addType(repositoryClass.build())
 
         return file.build().toString()
