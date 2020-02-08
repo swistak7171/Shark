@@ -4,6 +4,7 @@ import pl.kamilszustak.shark.annotations.BooleanProperty
 import pl.kamilszustak.shark.annotations.IntProperty
 import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.annotations.StringProperty
+import pl.kamilszustak.shark.annotations.util.CustomProperty
 import pl.kamilszustak.shark.core.Property
 import pl.kamilszustak.shark.core.PropertyRepository
 
@@ -18,4 +19,7 @@ interface BookRepository : PropertyRepository {
 
     @BooleanProperty(keyResource = R.string.is_started)
     val isStarted: Property<Boolean>
+
+    @CustomProperty(keyResource = R.string.is_abroad)
+    val pages: List<String>
 }
