@@ -1,9 +1,7 @@
 package pl.kamilszustak.shark.compiler
 
 import com.google.auto.service.AutoService
-import pl.kamilszustak.shark.annotations.AnnotateClassWith
-import pl.kamilszustak.shark.annotations.AnnotateConstructorWith
-import pl.kamilszustak.shark.annotations.CustomTypeProvider
+import pl.kamilszustak.shark.annotations.DefaultValueProvider
 import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.compiler.util.isFunction
 import pl.kamilszustak.shark.compiler.util.isInterface
@@ -16,6 +14,7 @@ import javax.annotation.processing.SupportedOptions
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.Element
+import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 
 @AutoService(Processor::class)
@@ -23,10 +22,12 @@ import javax.lang.model.element.TypeElement
 @SupportedOptions(SharkProcessor.KAPT_KOTLIN_GENERATED_OPTION_NAME)
 class SharkProcessor : PrintableProcessor() {
 
+    private val store: DefaultValuesStore = DefaultValuesStore()
+
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         return mutableSetOf(
             Repository::class.java.name,
-            CustomTypeProvider::class.java.name
+            DefaultValueProvider::class.java.name
         )
     }
 
@@ -39,7 +40,7 @@ class SharkProcessor : PrintableProcessor() {
         }
 
         val repositories = roundEnvironment.getElementsAnnotatedWith(Repository::class.java)
-        getCustomTypeProviders(roundEnvironment)
+        findDefaultValueProviders(roundEnvironment)
 
         val nameResources = repositories.mapNotNull {
             it.getAnnotation(Repository::class.java)
@@ -81,16 +82,22 @@ class SharkProcessor : PrintableProcessor() {
         }
     }
 
-    private fun getCustomTypeProviders(roundEnvironment: RoundEnvironment) {
-        val providers = roundEnvironment.getElementsAnnotatedWith(CustomTypeProvider::class.java)
+    private fun findDefaultValueProviders(roundEnvironment: RoundEnvironment) {
+        val providers = roundEnvironment.getElementsAnnotatedWith(DefaultValueProvider::class.java)
             ?: return
 
         providers.filterNotNull()
-            .forEach loop@{ element ->
+            .forEach { element ->
                 if (!(element.isFunction() && element.isStatic() && element.isPublic())) {
-                    printError("${CustomTypeProvider.signature} must be a public static function")
+                    printError("${DefaultValueProvider.signature} must be a public static function")
+                }
+
+                (element as? ExecutableElement)?.let { executableElement ->
+                    store.add(executableElement.asType() to executableElement)
                 }
             }
+
+        printError(store.getAll().toString())
     }
 
     companion object {

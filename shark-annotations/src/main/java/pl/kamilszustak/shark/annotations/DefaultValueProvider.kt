@@ -2,8 +2,8 @@ package pl.kamilszustak.shark.annotations
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class CustomTypeProvider {
+annotation class DefaultValueProvider {
     companion object {
-        val signature: String = "@${CustomTypeProvider::class.java.simpleName}"
+        val signature: String = "@${DefaultValueProvider::class.java.simpleName}"
     }
 }

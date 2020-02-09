@@ -1,10 +1,10 @@
 package pl.kamilszustak.shark
 
-import pl.kamilszustak.shark.annotations.CustomTypeProvider
+import pl.kamilszustak.shark.annotations.DefaultValueProvider
 
 object ListProvider {
 
-    @CustomTypeProvider
+    @DefaultValueProvider
     @JvmStatic
     fun getList(): List<String> = listOf()
 }
