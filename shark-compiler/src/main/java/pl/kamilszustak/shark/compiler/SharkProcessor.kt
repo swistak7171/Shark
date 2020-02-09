@@ -3,8 +3,12 @@ package pl.kamilszustak.shark.compiler
 import com.google.auto.service.AutoService
 import pl.kamilszustak.shark.annotations.AnnotateClassWith
 import pl.kamilszustak.shark.annotations.AnnotateConstructorWith
+import pl.kamilszustak.shark.annotations.CustomTypeProvider
 import pl.kamilszustak.shark.annotations.Repository
+import pl.kamilszustak.shark.compiler.util.isFunction
 import pl.kamilszustak.shark.compiler.util.isInterface
+import pl.kamilszustak.shark.compiler.util.isPublic
+import pl.kamilszustak.shark.compiler.util.isStatic
 import java.io.File
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
@@ -22,8 +26,7 @@ class SharkProcessor : PrintableProcessor() {
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         return mutableSetOf(
             Repository::class.java.name,
-            AnnotateClassWith::class.java.name,
-            AnnotateConstructorWith::class.java.name
+            CustomTypeProvider::class.java.name
         )
     }
 
@@ -36,6 +39,7 @@ class SharkProcessor : PrintableProcessor() {
         }
 
         val repositories = roundEnvironment.getElementsAnnotatedWith(Repository::class.java)
+        getCustomTypeProviders(roundEnvironment)
 
         val nameResources = repositories.mapNotNull {
             it.getAnnotation(Repository::class.java)
@@ -75,6 +79,18 @@ class SharkProcessor : PrintableProcessor() {
             this.writeText(fileContent)
             this.setReadOnly()
         }
+    }
+
+    private fun getCustomTypeProviders(roundEnvironment: RoundEnvironment) {
+        val providers = roundEnvironment.getElementsAnnotatedWith(CustomTypeProvider::class.java)
+            ?: return
+
+        providers.filterNotNull()
+            .forEach loop@{ element ->
+                if (!(element.isFunction() && element.isStatic() && element.isPublic())) {
+                    printError("${CustomTypeProvider.signature} must be a public static function")
+                }
+            }
     }
 
     companion object {

@@ -20,6 +20,6 @@ interface BookRepository : PropertyRepository {
     @BooleanProperty(keyResource = R.string.is_started)
     val isStarted: Property<Boolean>
 
-    @CustomProperty(keyResource = R.string.is_abroad)
-    val pages: List<String>
+    // @CustomProperty(keyResource = R.string.is_abroad)
+    // val pages: Property<List<String>>
 }

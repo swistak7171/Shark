@@ -1,6 +1,6 @@
 package pl.kamilszustak.shark.core
 
-interface Property<T : Comparable<T>> {
+interface Property<T> {
     var value: T
     val isPresent: Boolean
 

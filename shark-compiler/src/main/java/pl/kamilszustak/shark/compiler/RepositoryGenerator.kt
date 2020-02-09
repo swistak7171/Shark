@@ -9,6 +9,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.TypeVariableName
+import com.squareup.kotlinpoet.asTypeName
 import pl.kamilszustak.shark.annotations.AnnotateClassWith
 import pl.kamilszustak.shark.annotations.AnnotateConstructorWith
 import pl.kamilszustak.shark.annotations.BooleanProperty
@@ -18,8 +19,10 @@ import pl.kamilszustak.shark.annotations.LongProperty
 import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.annotations.StringProperty
 import pl.kamilszustak.shark.annotations.util.AnnotationHelper
+import pl.kamilszustak.shark.annotations.util.CustomProperty
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
+import kotlin.reflect.KClass
 
 object RepositoryGenerator {
 
@@ -100,6 +103,9 @@ object RepositoryGenerator {
                 is IntProperty -> annotation.keyResource to annotation.defaultValue
                 is LongProperty -> annotation.keyResource to annotation.defaultValue
                 is StringProperty -> annotation.keyResource to annotation.defaultValue
+                is CustomProperty -> {
+                    annotation.keyResource to findCustomDefaultValueProvider(annotation.type, processingEnvironment)
+                }
                 else -> throw IllegalStateException("Invalid property annotation")
             }
 
@@ -131,6 +137,11 @@ object RepositoryGenerator {
         file.addType(repositoryClass.build())
 
         return file.build().toString()
+    }
+
+    private fun findCustomDefaultValueProvider(type: KClass<Any>, processingEnvironment: ProcessingEnvironment): String {
+        // processingEnvironment.typeUtils.
+        return ""
     }
 
     private inline fun <reified T : Annotation> getAnnotations(element: Element, processingEnvironment: ProcessingEnvironment): List<ClassName> {
@@ -207,6 +218,7 @@ object RepositoryGenerator {
             is IntProperty -> "Int"
             is LongProperty -> "Long"
             is StringProperty -> "String"
+            is CustomProperty -> annotation.type.qualifiedName ?: annotation.type.asTypeName().canonicalName
             else -> throw IllegalStateException("Invalid property annotation")
         }
 

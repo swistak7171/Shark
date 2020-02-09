@@ -13,6 +13,7 @@ object AnnotationHelper {
         FloatProperty::class.java,
         IntProperty::class.java,
         LongProperty::class.java,
-        StringProperty::class.java
+        StringProperty::class.java,
+        CustomProperty::class.java
     )
 }

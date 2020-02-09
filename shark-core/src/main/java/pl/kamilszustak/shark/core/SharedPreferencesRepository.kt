@@ -17,11 +17,9 @@ abstract class SharedPreferencesRepository(
 ) : PropertyRepository {
 
     private val sharedPreferences: SharedPreferences
-    protected val sharedPreferencesManager: SharedPreferencesManager
 
     init {
         sharedPreferences = createSharedPreferences(nameResource, isEncrypted)
-        sharedPreferencesManager = SharedPreferencesManager(sharedPreferences)
     }
 
     override val all: Map<String, *> = sharedPreferences.all

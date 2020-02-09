@@ -16,3 +16,9 @@ fun Element.isFunction(): Boolean =
 
 fun Element.isField(): Boolean =
     this.kind == ElementKind.FIELD
+
+fun Element.isStatic(): Boolean =
+    Modifier.STATIC in this.modifiers
+
+fun Element.isPublic(): Boolean =
+    Modifier.PUBLIC in this.modifiers
