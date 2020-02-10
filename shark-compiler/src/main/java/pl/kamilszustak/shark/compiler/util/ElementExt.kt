@@ -24,7 +24,7 @@ fun Element.isPublic(): Boolean =
     Modifier.PUBLIC in this.modifiers
 
 inline fun <reified T: Annotation> Element.getAnnotation(): T? {
-    return this.getAnnotation(T::class.java) ?: throw IllegalArgumentException("Element doesn't contain annotation: ${T::class.simpleName}")
+    return this.getAnnotation(T::class.java) ?: throw IllegalArgumentException("Element isn't annotated with ${T::class.simpleName}")
 }
 
 inline fun <reified T: Annotation> Element.getAnnotationOrNull(): T? =

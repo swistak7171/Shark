@@ -3,11 +3,14 @@ package pl.kamilszustak.shark.compiler
 import com.google.auto.service.AutoService
 import pl.kamilszustak.shark.annotations.DefaultValueProvider
 import pl.kamilszustak.shark.annotations.Repository
+import pl.kamilszustak.shark.compiler.generator.RepositoryGenerator
+import pl.kamilszustak.shark.compiler.print.Printer
 import pl.kamilszustak.shark.compiler.util.isFunction
 import pl.kamilszustak.shark.compiler.util.isInterface
 import pl.kamilszustak.shark.compiler.util.isPublic
 import pl.kamilszustak.shark.compiler.util.isStatic
 import java.io.File
+import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedOptions
@@ -20,9 +23,11 @@ import javax.lang.model.element.TypeElement
 @AutoService(Processor::class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedOptions(SharkProcessor.KAPT_KOTLIN_GENERATED_OPTION_NAME)
-class SharkProcessor : PrintableProcessor() {
+class SharkProcessor : AbstractProcessor() {
 
-    private val store: DefaultValuesStore = DefaultValuesStore()
+    private val printer: Printer =
+        Printer(processingEnv)
+    private val store: ProviderStore = ProviderStore()
 
     override fun getSupportedAnnotationTypes(): MutableSet<String> {
         return mutableSetOf(
@@ -48,28 +53,28 @@ class SharkProcessor : PrintableProcessor() {
         }
 
         if (nameResources.size != nameResources.distinct().size) {
-            printError("SharedPreferences cannot have the same name")
+            printer.error("SharedPreferences cannot have the same name")
             return false
         }
 
         repositories.forEach { element ->
             if (element == null) {
-                printError("Element cannot be null")
+                printer.error("Element cannot be null")
                 return false
             }
 
             if (!element.isInterface()) {
-                printError("@Repository annotation can be applied only to interfaces")
+                printer.error("@Repository annotation can be applied only to interfaces")
                 return false
             }
 
-            generateRepository(element)
+            generateRepository(element, store)
         }
 
         return true
     }
 
-    private fun generateRepository(element: Element) {
+    private fun generateRepository(element: Element, store: ProviderStore) {
         val className = "${element.simpleName}Impl"
         val packageName = processingEnv.elementUtils.getPackageOf(element).toString()
 
@@ -89,15 +94,13 @@ class SharkProcessor : PrintableProcessor() {
         providers.filterNotNull()
             .forEach { element ->
                 if (!(element.isFunction() && element.isStatic() && element.isPublic())) {
-                    printError("${DefaultValueProvider.signature} must be a public static function")
+                    printer.error("${DefaultValueProvider.signature} must be a public static function")
                 }
 
                 (element as? ExecutableElement)?.let { executableElement ->
                     store.add(executableElement.asType() to executableElement)
                 }
             }
-
-        printError(store.getAll().toString())
     }
 
     companion object {

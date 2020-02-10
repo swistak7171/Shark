@@ -3,7 +3,7 @@ package pl.kamilszustak.shark.compiler
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.type.TypeMirror
 
-class DefaultValuesStore {
+class ProviderStore {
     private val providers: MutableMap<TypeMirror, ExecutableElement> = hashMapOf()
 
     fun add(provider: Pair<TypeMirror, ExecutableElement>) {

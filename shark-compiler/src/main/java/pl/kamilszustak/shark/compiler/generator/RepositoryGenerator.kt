@@ -1,4 +1,4 @@
-package pl.kamilszustak.shark.compiler
+package pl.kamilszustak.shark.compiler.generator
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
@@ -20,6 +20,7 @@ import pl.kamilszustak.shark.annotations.Repository
 import pl.kamilszustak.shark.annotations.StringProperty
 import pl.kamilszustak.shark.annotations.util.AnnotationHelper
 import pl.kamilszustak.shark.annotations.util.CustomProperty
+import pl.kamilszustak.shark.compiler.AnnotatedElement
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import kotlin.reflect.KClass
@@ -52,10 +53,22 @@ object RepositoryGenerator {
         val className = "${element.simpleName}Impl"
 
         val file = FileSpec.builder("", className)
-            .addImport(CORE_PACKAGE, PROPERTY_TYPE)
-            .addImport(CORE_PACKAGE, SHARED_PREFERENCES_PROPERTY_TYPE)
-            .addImport(CORE_PACKAGE, SHARED_PREFERENCES_REPOSITORY_TYPE)
-            .addImport(APPLICATION_PACKAGE, APPLICATION_TYPE)
+            .addImport(
+                CORE_PACKAGE,
+                PROPERTY_TYPE
+            )
+            .addImport(
+                CORE_PACKAGE,
+                SHARED_PREFERENCES_PROPERTY_TYPE
+            )
+            .addImport(
+                CORE_PACKAGE,
+                SHARED_PREFERENCES_REPOSITORY_TYPE
+            )
+            .addImport(
+                APPLICATION_PACKAGE,
+                APPLICATION_TYPE
+            )
 
 
         val parentClassType = TypeVariableName(SHARED_PREFERENCES_REPOSITORY_TYPE)
@@ -67,7 +80,11 @@ object RepositoryGenerator {
         val constructor = FunSpec.constructorBuilder()
             .addParameter(APPLICATION_PARAMETER_NAME, applicationType)
 
-        val constructorAnnotations = getAnnotations<AnnotateConstructorWith>(element, processingEnvironment)
+        val constructorAnnotations =
+            getAnnotations<AnnotateConstructorWith>(
+                element,
+                processingEnvironment
+            )
         constructorAnnotations.forEach { className ->
             constructor.addAnnotation(className)
         }
@@ -76,11 +93,18 @@ object RepositoryGenerator {
             .primaryConstructor(constructor.build())
             .superclass(parentClassType)
             .addSuperinterface(parentInterfaceType)
-            .addSuperclassConstructorParameter("%N", APPLICATION_PARAMETER_NAME)
+            .addSuperclassConstructorParameter("%N",
+                APPLICATION_PARAMETER_NAME
+            )
             .addSuperclassConstructorParameter("%L", repositoryAnnotation.nameResource)
             .addSuperclassConstructorParameter("%L", repositoryAnnotation.isEncrypted)
 
-        val classAnnotations = getAnnotations<AnnotateClassWith>(element, processingEnvironment)
+        val classAnnotations =
+            getAnnotations<AnnotateClassWith>(
+                element,
+                processingEnvironment
+            )
+
         classAnnotations.forEach { className ->
             repositoryClass.addAnnotation(className)
         }
@@ -88,13 +112,19 @@ object RepositoryGenerator {
         val restoreDefaultValuesFunction = FunSpec.builder(RESTORE_DEFAULT_VALUES_FUNCTION_NAME)
             .addModifiers(KModifier.OVERRIDE)
 
-        val restoreDefaultValuesAsyncFunction = FunSpec.builder(RESTORE_DEFAULT_VALUES_ASYNC_FUNCTION_NAME)
+        val restoreDefaultValuesAsyncFunction = FunSpec.builder(
+            RESTORE_DEFAULT_VALUES_ASYNC_FUNCTION_NAME
+        )
             .addModifiers(KModifier.OVERRIDE)
 
         val elements = element.findAnnotatedElements()
         elements.forEach { annotatedElement ->
-            val propertyClass = ClassName("", PROPERTY_TYPE)
-                .parameterizedBy(getTypeOfProperty(annotatedElement.annotation))
+            val propertyClass = ClassName("",
+                PROPERTY_TYPE
+            )
+                .parameterizedBy(
+                    getTypeOfProperty(annotatedElement.annotation)
+                )
 
             val annotation = annotatedElement.annotation
             val (keyResource, defaultValue) = when (annotation) {
@@ -104,25 +134,36 @@ object RepositoryGenerator {
                 is LongProperty -> annotation.keyResource to annotation.defaultValue
                 is StringProperty -> annotation.keyResource to annotation.defaultValue
                 is CustomProperty -> {
-                    annotation.keyResource to findCustomDefaultValueProvider(annotation.type, processingEnvironment)
+                    annotation.keyResource to findCustomDefaultValueProvider(
+                        annotation.type,
+                        processingEnvironment
+                    )
                 }
                 else -> throw IllegalStateException("Invalid property annotation")
             }
 
-            val initializerString = getPropertyInitializerString(defaultValue)
-
-            val property = PropertySpec.builder(
-                annotatedElement.name,
-                propertyClass
-            )
+            val property = PropertySpec.builder(annotatedElement.name, propertyClass)
                 .addModifiers(KModifier.OVERRIDE)
-                .initializer(
-                    initializerString,
-                    SHARED_PREFERENCES_PROPERTY_TYPE,
-                    keyResource,
-                    defaultValue
-                )
+                .initializer(TypeSpec.anonymousClassBuilder()
+                    .addProperty(PropertySpec.builder("key", String::class)
+                        .addModifiers(KModifier.OVERRIDE)
+                        .getter(FunSpec.getterBuilder()
+                            .addStatement("return getString(%L)", keyResource)
+                            .build())
+                        .build())
+                    .addProperty(PropertySpec.builder("defaultValue", getTypeOfProperty(annotatedElement.annotation))
+                        .addModifiers(KModifier.OVERRIDE)
+                        .getter(FunSpec.getterBuilder()
+                            .addStatement(getDefaultValueStatement(defaultValue), defaultValue)
+                            .build())
+                        .build())
+                    .superclass(ClassName("", SHARED_PREFERENCES_PROPERTY_TYPE)
+                        .parameterizedBy(getTypeOfProperty(annotatedElement.annotation)))
+                    .addSuperclassConstructorParameter("%L", "this")
+                    .build()
+                    .toString())
                 .build()
+
 
             repositoryClass.addProperty(property)
             restoreDefaultValuesFunction.addStatement("${property.name}.$RESTORE_DEFAULT_VALUE_FUNCTION_NAME()")
@@ -177,12 +218,16 @@ object RepositoryGenerator {
             AnnotationHelper.propertyAnnotations.forEach { annotation ->
                 val foundAnnotation = element.getAnnotation(annotation)
                 if (foundAnnotation != null) {
-                    val name = formatName(element.simpleName.toString())
-                    val annotatedElement = AnnotatedElement(
-                        name,
-                        foundAnnotation,
-                        element
-                    )
+                    val name =
+                        formatName(
+                            element.simpleName.toString()
+                        )
+                    val annotatedElement =
+                        AnnotatedElement(
+                            name,
+                            foundAnnotation,
+                            element
+                        )
                     elements.add(annotatedElement)
                 }
             }
@@ -225,12 +270,12 @@ object RepositoryGenerator {
         return ClassName("", typeString)
     }
 
-    private fun getPropertyInitializerString(defaultValue: Any): String {
+    private fun getDefaultValueStatement(defaultValue: Any): String {
         val formatChar = when (defaultValue) {
             !is String -> "%L"
             else -> "%S"
         }
 
-        return "%L(getString(%L), $formatChar, this)"
+        return "return $formatChar"
     }
 }
